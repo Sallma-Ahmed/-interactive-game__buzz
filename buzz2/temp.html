@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>buzz</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="./js/vue.js"></script>
+    <script src="./js/lottie-min.js"></script>
+    <script src="submit_sender.js"></script>
+  </head>
+  <style>
+    .opponent-typing-dots {
+      display: inline-block;
+      direction: ltr;
+    }
+
+    .opponent-typing-dots .dot {
+      display: inline-block;
+      width: 1.2vh;
+      height: 1.2vh;
+      margin: 0 0.5vw;
+      background-color: #000;
+      border-radius: 50%;
+      opacity: 0;
+      animation: typingDots 1.5s infinite;
+    }
+
+    .opponent-typing-dots .dot:nth-child(1) {
+      animation-delay: 0s;
+    }
+    .opponent-typing-dots .dot:nth-child(2) {
+      animation-delay: 0.3s;
+    }
+    .opponent-typing-dots .dot:nth-child(3) {
+      animation-delay: 0.6s;
+    }
+
+    @keyframes typingDots {
+      0% {
+        opacity: 0;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.3);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(1);
+      }
+    }
+    .disable-pointer {
+      pointer-events: none;
+
+    }
+  </style>
+  <body>
+    <div id="buzz" :class="{ 'light-on': isLightOn }">
+      <div class="loader" v-show="!isSuccess || !isLoaded"></div>
+      <div class="isSuccess" v-show="isSuccess && isLoaded">
+        <div class="aspect-box" id="container">
+          <div class="logo"></div>
+          <div class="safe-area" id="safeArea"></div>
+          <div
+            class="music"
+            @click="toggleMute"
+            :style="{ backgroundImage: isMuted ? 'url(images/mute.png)' : 'url(images/music.png)' }"
+          ></div>
+
+          <button class="hint-btn" @click="showHintScreen = true"></button>
+
+          <div id="introStage">
+            <button class="next" @click="goToNext"></button>
+            <button
+              class="close-btn"
+              v-show="showClose"
+              :class="{ visible: showClose }"
+              @click="closeIntro"
+            ></button>
+            <button class="lang" v-show="showClose" @click="toggleLang">
+              <img :src="langImage" style="width: 100%; height: 100%" />
+            </button>
+          </div>
+
+          <div
+            id="chooseAvatar"
+            v-show="showAvatar"
+            style="position: absolute; width: 100%; z-index: 12; height: 100%"
+          >
+            <div class="avatar-selection-overlay">
+              <div class="avatar-options">
+                <button
+                  class="left-arrow"
+                  :disabled="currentAvatarIndex === 0"
+                  @click="changeAvatar"
+                ></button>
+                <button
+                  class="right-arrow"
+                  :disabled="currentAvatarIndex === 1"
+                  @click="changeAvatar"
+                ></button>
+              </div>
+
+              <button class="start-btn" @click="startGame"></button>
+            </div>
+          </div>
+
+          <div id="boyVs" class="vs-animation-container"></div>
+
+          <div id="girlVs" class="vs-animation-container"></div>
+
+          <div v-if="showHintScreen" class="hint-screen">
+            <div class="hint-box">
+              <p
+                class="hint-text"
+                :class="{ 'font-en': currentLang === 'en', 'font-ar': currentLang === 'ar' }"
+              >
+                {{ hints[currentLang][0] }}
+              </p>
+              <button class="closeHint" @click="closeHint"></button>
+              <button class="hint-lang" @click="toggleLang">
+                <img :src="langImage" style="width: 100%; height: 100%" />
+              </button>
+            </div>
+          </div>
+
+          <div id="buzzScreen"></div>
+
+          <div class="question"><p class="parag">{{ currentQuestion }}</p></div>
+          <div class="timer-container">
+            <div id="Timer"></div>
+            <div class="timer-text">{{ timeLeft }}</div>
+          </div>
+     <div
+  class="keyboard-container"
+  :style="{ backgroundImage: 'url(' + getKeyboardImage() + ')' }"
+  :class="[
+    { show: showKeyboard, dimmed: keyboardDimmed },
+    { 'disable-pointer': enterPressed }
+  ]"
+  v-if="isLoaded && activeKeyboardKeys.length > 0"
+>
+
+            <div
+              class="input-display"
+              :class="{ 'congrats-correct': answerStatus === 'correct', 'congrats-wrong': answerStatus === 'wrong' }"
+            >
+              <span v-if="!showOpponentTyping">{{ currentInput }}</span>
+              <span v-else class="opponent-typing-dots">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </span>
+            </div>
+
+            <div class="coloumn">
+              <div class="hint-container">
+                <img
+                  :src="hintShowAnswer.image"
+                  :class="{ 'active': hintShowAnswer.unlocked && !hintShowAnswer.used }"
+                  @click="useShowAnswer"
+                  class="hint-icon showAnswer"
+                />
+                <img
+                  :src="hintPlusTime.image"
+                  :class="{ 'active': hintPlusTime.unlocked && !hintPlusTime.used }"
+                  @click="usePlusTime"
+                  class="hint-icon plusTime"
+                />
+              </div>
+            </div>
+
+            <div class="keyboardLamp" :class="keyboardLampState"></div>
+
+            <div
+              class="keyboard-keys"
+              :class="{
+    'keyboard-dimmed': isOpponentTurn
+  }"
+            >
+              <button
+                v-for="(keyObj, keyIndex) in activeKeyboardKeys"
+                :key="keyIndex"
+                :class="[
+    'key',
+    keyObj.id === '' ? 'key-dimmed' : '',
+    keyObj.type === 'special' ? 'key-special' : '',
+    keyObj.type === 'symbol' ? 'key-symbol' : ''
+  ]"
+                @click="handleKeyPress($event, keyObj.id)"
+                :data-key="keyObj.id"
+                :style="{ backgroundImage: 'url(' + getKeyImage(keyObj.id) + ')' }"
+              >
+                <span v-if="keyObj.id && keyObj.type !== 'special'"
+                  >{{ keyObj.id }}</span
+                >
+                <span v-else-if="keyObj.type === 'special'"
+                  >{{ keyObj.id.toUpperCase() }}</span
+                >
+              </button>
+            </div>
+          </div>
+          <button
+            v-if="showBuzzButton"
+            class="toggle-light-button"
+            @click="startQuiz"
+          ></button>
+
+          <div class="score-badge player-score-badge">
+            <img :src="getBadgeImage(studentScore)" alt="Player Badge" />
+            <p>{{ studentScore }}</p>
+          </div>
+
+          <div class="score-badge opponent-score-badge">
+            <img :src="getBadgeImage(computerScore)" alt="Opponent Badge" />
+            <p>{{ computerScore }}</p>
+          </div>
+
+          <div class="feedback-screen" v-show="showResultScreen">
+            <div class="feedback-content">
+              <div id="feedbackAnimationsContainer">
+                <div
+                  id="boy"
+                  v-show="selectedAvatar == 'boy'"
+                  :class="{ 'winnerr': studentScore > computerScore , 'loserr': computerScore >  studentScore }"
+                ></div>
+                <div
+                  id="girl"
+                  v-show="selectedAvatar == 'girl'"
+                  :class="{ 'winnerr': studentScore > computerScore , 'loserr': computerScore >  studentScore }"
+                ></div>
+                <div
+                  id="computerBoy1"
+                  v-show="activeOpponentCharFlag == 'showBoyCharVs1'"
+                  :class="{ 'winnerr': computerScore > studentScore , 'loserr': studentScore >  computerScore }"
+                ></div>
+                <div
+                  id="computerBoy2"
+                  v-show="activeOpponentCharFlag == 'showBoyCharVs2'"
+                  :class="{ 'winnerr': computerScore > studentScore , 'loserr': studentScore >  computerScore }"
+                ></div>
+                <div
+                  id="computerGirl"
+                  v-show="activeOpponentCharFlag == 'showGirlCharVs'"
+                  :class="{ 'winnerr': computerScore > studentScore , 'loserr': studentScore >  computerScore }"
+                ></div>
+              </div>
+              <div class="feedback-card loser">
+                <div class="loser-overlay"></div>
+                <span
+                  class="player-name"
+                  v-if="studentScore < computerScore"
+                ></span>
+                <span
+                  class="player-name"
+                  v-if="computerScore < studentScore"
+                ></span>
+
+                <span class="score-display" v-if="studentScore < computerScore"
+                  >{{studentScore}}/100</span
+                >
+                <span class="score-display" v-if="computerScore < studentScore"
+                  >{{ computerScore }}/100</span
+                >
+              </div>
+              <div class="feedback-card winner">
+                <div id="festival"></div>
+
+                <span
+                  class="player-name"
+                  v-if="studentScore > computerScore"
+                ></span>
+                <span
+                  class="player-name"
+                  v-if="computerScore > studentScore"
+                ></span>
+
+                <span class="score-display" v-if="studentScore > computerScore"
+                  >{{studentScore}}/100</span
+                >
+                <span class="score-display" v-if="computerScore > studentScore"
+                  >{{ computerScore }}/100</span
+                >
+                <button class="restart-button" @click="resetGame"></button>
+              </div>
+            </div>
+          </div>
+          <div class="lamps">
+            <div
+              class="lamp"
+              v-for="(lamp, index) in lamps"
+              :key="'left-' + index"
+              :style="getLampStyle(index, 'left')"
+            >
+              <img :src="leftLampStates[lamp.state]" />
+            </div>
+          </div>
+
+          <div class="right-lamps">
+            <div
+              class="lamp"
+              v-for="(lamp, index) in lampsRight"
+              :key="'right-' + index"
+              :style="getLampStyle(index, 'right')"
+            >
+              <img :src="rightLampStates[lamp.state]" />
+            </div>
+          </div>
+
+          <div class="leftStage">
+            <div id="leftLight" v-show="showleftLightAnimation"></div>
+
+            <div id="boyStage" v-show="showBoyStage"></div>
+            <div id="girlStage" v-show="showGirlStage"></div>
+          </div>
+          <div class="rightStage">
+            <div id="vsLight" v-show="showVsLightAnimation"></div>
+            <div id="GirlCharVs" v-show="showGirlCharVs"></div>
+            <div id="BoyCharVs1" v-show="showBoyCharVs1"></div>
+            <div id="BoyCharVs2" v-show="showBoyCharVs2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="main.js"></script>
+    <script src="./js/animation.js"></script>
+  </body>
+</html>
