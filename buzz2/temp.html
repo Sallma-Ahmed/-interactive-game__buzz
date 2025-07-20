@@ -10,12 +10,12 @@
     <script src="submit_sender.js"></script>
   </head>
   <style>
-    .opponent-typing-dots {
+    .Computer-typing-dots {
       display: inline-block;
       direction: ltr;
     }
 
-    .opponent-typing-dots .dot {
+    .Computer-typing-dots .dot {
       display: inline-block;
       width: 1.2vh;
       height: 1.2vh;
@@ -26,13 +26,13 @@
       animation: typingDots 1.5s infinite;
     }
 
-    .opponent-typing-dots .dot:nth-child(1) {
+    .Computer-typing-dots .dot:nth-child(1) {
       animation-delay: 0s;
     }
-    .opponent-typing-dots .dot:nth-child(2) {
+    .Computer-typing-dots .dot:nth-child(2) {
       animation-delay: 0.3s;
     }
-    .opponent-typing-dots .dot:nth-child(3) {
+    .Computer-typing-dots .dot:nth-child(3) {
       animation-delay: 0.6s;
     }
 
@@ -146,8 +146,8 @@
               class="input-display"
               :class="{ 'congrats-correct': answerStatus === 'correct', 'congrats-wrong': answerStatus === 'wrong' }"
             >
-              <span v-if="!showOpponentTyping">{{ currentInput }}</span>
-              <span v-else class="opponent-typing-dots">
+              <span v-if="!showComputerTyping">{{ currentInput }}</span>
+              <span v-else class="Computer-typing-dots">
                 <span class="dot"></span>
                 <span class="dot"></span>
                 <span class="dot"></span>
@@ -176,7 +176,7 @@
             <div
               class="keyboard-keys"
               :class="{
-    'keyboard-dimmed': isOpponentTurn
+    'keyboard-dimmed': isComputerTurn
   }"
             >
               <button
@@ -212,8 +212,8 @@
             <p>{{ studentScore }}</p>
           </div>
 
-          <div class="score-badge opponent-score-badge">
-            <img :src="getBadgeImage(computerScore)" alt="Opponent Badge" />
+          <div class="score-badge Computer-score-badge">
+            <img :src="getBadgeImage(computerScore)" alt="Computer Badge" />
             <p>{{ computerScore }}</p>
           </div>
 
@@ -232,17 +232,17 @@
                 ></div>
                 <div
                   id="computerBoy1"
-                  v-show="activeOpponentCharFlag == 'showBoyCharVs1'"
+                  v-show="activeComputerCharFlag == 'showBoyCharVs1'"
                   :class="{ 'winnerr': computerScore > studentScore , 'loserr': studentScore >  computerScore }"
                 ></div>
                 <div
                   id="computerBoy2"
-                  v-show="activeOpponentCharFlag == 'showBoyCharVs2'"
+                  v-show="activeComputerCharFlag == 'showBoyCharVs2'"
                   :class="{ 'winnerr': computerScore > studentScore , 'loserr': studentScore >  computerScore }"
                 ></div>
                 <div
                   id="computerGirl"
-                  v-show="activeOpponentCharFlag == 'showGirlCharVs'"
+                  v-show="activeComputerCharFlag == 'showGirlCharVs'"
                   :class="{ 'winnerr': computerScore > studentScore , 'loserr': studentScore >  computerScore }"
                 ></div>
               </div>

@@ -429,7 +429,7 @@ body .aspect-box .score-badge {
   z-index: 11;
   bottom: 1vh;
 }
-body .aspect-box .opponent-score-badge img {
+body .aspect-box .Computer-score-badge img {
   width: 63%;
   height: 100%;
   -o-object-fit: contain;
@@ -451,7 +451,7 @@ body .aspect-box .player-score-badge {
   top: 35%;
   left: 10%;
 }
-body .aspect-box .opponent-score-badge {
+body .aspect-box .Computer-score-badge {
   top: 35%;
   right: 10%;
 }
@@ -1004,4 +1004,4 @@ body .congrats-message.congrats-wrong {
     height: 100vh;
     overflow: hidden;
   }
-}/*# sourceMappingURL=style.css.map */
+}

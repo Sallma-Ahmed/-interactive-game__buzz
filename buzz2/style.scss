@@ -432,14 +432,14 @@ body {
       bottom: 1vh;
     }
 
-    .opponent-score-badge img {
+    .Computer-score-badge img {
       width: 63%;
       height: 100%;
       object-fit: contain;
-      position: absolute;
+      position: absolute;  
       bottom: 0;
       left: 65%;
-    }
+    }   
     .player-score-badge img {
       width: 60%;
       height: 100%;
@@ -454,7 +454,7 @@ body {
       left: 10%;
     }
 
-    .opponent-score-badge {
+    .Computer-score-badge {
       top: 35%;
       right: 10%;
     }
